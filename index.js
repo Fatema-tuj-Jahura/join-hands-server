@@ -36,6 +36,22 @@ async function run() {
       res.send(result);
     });
 
+    // Get volunteer posts with optional search by title
+app.get('/volunteer', async (req, res) => {
+    const { search } = req.query;
+    let query = {};
+
+    // If search query exists, filter by title 
+    if (search) {
+        query.title = { $regex: search, $options: 'i' }; 
+    }
+
+    const cursor = volunteerCollection.find(query);
+    const result = await cursor.toArray();
+
+    res.send(result);
+});
+
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
