@@ -4,6 +4,7 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion } = require('mongodb');
+const { ObjectId } = require('mongodb');
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -50,7 +51,15 @@ app.get('/volunteer', async (req, res) => {
     const result = await cursor.toArray();
 
     res.send(result);
-});
+    });
+
+    // Load a specific post details by id
+    app.get('/volunteer/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const result = await volunteerCollection.findOne(query);
+        res.send(result);
+      });
 
   } finally {
     // Ensures that the client will close when you finish/error
