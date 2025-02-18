@@ -38,20 +38,20 @@ async function run() {
     });
 
     // Get volunteer posts with optional search by title
-app.get('/volunteer', async (req, res) => {
-    const { search } = req.query;
-    let query = {};
+    app.get('/volunteer', async (req, res) => {
+        const { search } = req.query;
+        let query = {};
 
-    // If search query exists, filter by title 
-    if (search) {
-        query.title = { $regex: search, $options: 'i' }; 
-    }
+        // If search query exists, filter by title 
+        if (search) {
+           query.title = { $regex: search, $options: 'i' }; 
+        }
 
-    const cursor = volunteerCollection.find(query);
-    const result = await cursor.toArray();
+        const cursor = volunteerCollection.find(query);
+        const result = await cursor.toArray();
 
-    res.send(result);
-    });
+        res.send(result);
+        });
 
     // Load a specific post details by id
     app.get('/volunteer/:id', async (req, res) => {
@@ -60,6 +60,55 @@ app.get('/volunteer', async (req, res) => {
         const result = await volunteerCollection.findOne(query);
         res.send(result);
       });
+    // Added new collection  
+    const requestedVolunteer = client.db('volunteerDB').collection('volunteers');
+
+    
+
+app.post('/requestedVolunteer', async (req, res) => {
+    const newPost = req.body;
+
+    // Ensure newPost.volunteersNeeded is a number 
+    newPost.volunteersNeeded = Number(newPost.volunteersNeeded) || 0;
+
+    console.log('Creating new volunteer post:', newPost);
+    const result = await requestedVolunteer.insertOne(newPost);
+    
+    if (result.insertedId) {
+        const postId = new ObjectId(newPost.postId);
+
+        // Fetch the current post data from volunteerCollection
+        const existingPost = await volunteerCollection.findOne({ _id: postId });
+
+        if (existingPost) {
+            let updatedVolunteersNeeded = Number(existingPost.volunteersNeeded) || 0;
+
+            // Step 1: Ensure volunteersNeeded is a number in volunteerCollection
+            if (typeof existingPost.volunteersNeeded !== 'number') {
+                await volunteerCollection.updateOne(
+                    { _id: postId },
+                    { $set: { volunteersNeeded: updatedVolunteersNeeded } }
+                );
+            }
+
+            // Step 2: Reduce the available volunteer slots in volunteerCollection
+            await volunteerCollection.updateOne(
+                { _id: postId },
+                { $inc: { volunteersNeeded: -1 } }
+            );
+
+            // Step 3: Also update volunteersNeeded in requestedVolunteer collection
+            await requestedVolunteer.updateOne(
+                { _id: result.insertedId },  // Update the newly inserted document
+                { $set: { volunteersNeeded: updatedVolunteersNeeded - 1 } }
+            );
+        }
+    }
+
+    res.send(result);
+});
+
+
 
   } finally {
     // Ensures that the client will close when you finish/error
