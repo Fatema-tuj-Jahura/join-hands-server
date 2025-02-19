@@ -60,6 +60,27 @@ async function run() {
         const result = await volunteerCollection.findOne(query);
         res.send(result);
       });
+    
+    // Delete a post
+    app.delete('/volunteer/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await volunteerCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Update a specific element
+    app.put('/volunteer/:id', async (req, res) => {
+      const id = req.params.id;
+      const updatedPost = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: updatedPost,
+      };
+      const result = await volunteerCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     // Added new collection  
     const requestedVolunteer = client.db('volunteerDB').collection('volunteers');
 
