@@ -128,6 +128,18 @@ app.post('/requestedVolunteer', async (req, res) => {
 
     res.send(result);
 });
+   
+app.get('/requestedVolunteer', async (req, res) => {
+  try {
+    
+    const cursor = requestedVolunteer.find()
+    const result = await cursor.toArray();
+    res.send(result);
+  } catch (error) {
+    console.error('Error fetching requested volunteer posts:', error);
+    res.status(500).send({ message: 'Failed to load posts' });
+  }
+});
 
 
 
