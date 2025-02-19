@@ -141,6 +141,42 @@ app.get('/requestedVolunteer', async (req, res) => {
   }
 });
 
+// Delete a post
+// app.delete('/requestedVolunteer/:id', async (req, res) => {
+//   const id = req.params.id;
+//   const query = { _id: new ObjectId(id) };
+//   const result = await requestedVolunteer.deleteOne(query);
+//   res.send(result);
+// });
+
+app.delete('/requestedVolunteer/:id', async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) };
+
+  // Find the request before deleting it
+  const request = await requestedVolunteer.findOne(query);
+
+
+  // Extract postId from the request to find the original post
+  const postId = new ObjectId(request.postId);
+
+  // Step 1: Increase the volunteersNeeded count in volunteerCollection
+  const updateResult = await volunteerCollection.updateOne(
+      { _id: postId },
+      { $inc: { volunteersNeeded: 1 } } // Increment the count by 1
+  );
+
+  if (updateResult.modifiedCount === 0) {
+      return res.status(500).send({ message: "Failed to update volunteers count" });
+  }
+
+  // Step 2: Delete the volunteer request from requestedVolunteer collection
+  const deleteResult = await requestedVolunteer.deleteOne(query);
+
+  res.send(deleteResult);
+});
+
+
 
 
   } finally {
