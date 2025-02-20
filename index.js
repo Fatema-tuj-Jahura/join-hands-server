@@ -37,24 +37,32 @@ async function run() {
       res.send(result);
     });
 
-    // Get volunteer posts with optional search by title
-    app.get('/volunteer', async (req, res) => {
-      const { search } = req.query;
-      let query = {};
-  
-      // If search query exists, filter by title
-      if (search) {
-          query.title = { $regex: search, $options: 'i' };
-      }
-  
-      const cursor = volunteerCollection
-          .find(query)
-          .sort({ deadline: 1 }) // Sorts by deadline in ascending order
-          .limit(6); // Limits results to 6
-  
-      const result = await cursor.toArray();
-      res.send(result);
-  });
+  // Get all volunteer posts (with optional search by title, no sorting or limit)
+app.get('/volunteer', async (req, res) => {
+  const { search } = req.query;
+  let query = {};
+
+  // If search query exists, filter by title
+  if (search) {
+    query.title = { $regex: search, $options: 'i' };
+  }
+
+  const cursor = volunteerCollection.find(query);
+  const result = await cursor.toArray();
+  res.send(result);
+});
+
+// Get top 6 upcoming deadline posts (sorted in ascending order)
+app.get('/volunteer/upcoming', async (req, res) => {
+  const cursor = volunteerCollection
+    .find({})
+    .sort({ deadline: 1 }) // Sort by earliest deadline first
+    .limit(6); // Only 6 results
+
+  const result = await cursor.toArray();
+  res.send(result);
+});
+
   
 
     // Load a specific post details by id
